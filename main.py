@@ -1,4 +1,3 @@
-import subprocess
 import rebrick
 import json
 
@@ -19,7 +18,7 @@ print(f"\nUsing {len(sets)} set(s) with {sum([i['num_parts'] for i in sets])} pa
 print("\nCalculating...")
 
 mparts = {}
-for i in json.loads(rebrick.lego.get_set_elements(int(bld['set_num'][:-2]), color_details=False, page_size=10000).read())["results"]:
+for i in json.loads(rebrick.lego.get_set_elements(int(bld["set_num"][:-2]), color_details=False, page_size=10000).read())["results"]:
   if not i["is_spare"]:
     if i["part"]["part_num"] in mparts:
       mparts[i["part"]["part_num"]] += i["quantity"]
@@ -29,7 +28,7 @@ for i in json.loads(rebrick.lego.get_set_elements(int(bld['set_num'][:-2]), colo
 sparts = []
 for i in sets:
   temp = {}
-  for i in json.loads(rebrick.lego.get_set_elements(int(i['set_num'][:-2]), color_details=False, page_size=10000).read())["results"]:
+  for i in json.loads(rebrick.lego.get_set_elements(int(i["set_num"][:-2]), color_details=False, page_size=10000).read())["results"]:
     if not i["is_spare"]:
       if i["part"]["part_num"] in temp:
         temp[i["part"]["part_num"]] += i["quantity"]
@@ -42,11 +41,11 @@ for i in mparts:
   for j in range(0, len(sets)):
     if i in sparts[j]:
       if sparts[j][i] >= mparts[i]:
-        fparts[j+1][i] = sparts[j][i]
+        fparts[j + 1][i] = sparts[j][i]
         mparts[i] = 0
         break
       else:
-        fparts[j+1][i] = sparts[j][i]
+        fparts[j + 1][i] = sparts[j][i]
         mparts[i] -= sparts[j][i]
     if mparts[i] > 0:
       fparts[0][i] = mparts[i]
