@@ -3,55 +3,53 @@ import json
 
 rebrick.init("7a034c160c02ba197f95bf916b613e80")
 
-bld = json.loads(rebrick.lego.get_set(int(input("Set to build: "))).read())
-print(f"Building: {bld['name']} ({bld['set_num'][:-2]})")
+set = json.loads(rebrick.lego.get_set(input("Set to build: ")).read())
+print(f"Building: {set['name']} ({set['set_num'][:-2]})")
 
 print("\nSets to use:")
 sets = []
-set = input("Set: ")
-while set:
-  sets.append(json.loads(rebrick.lego.get_set(int(set)).read()))
+i = input("Set: ")
+while i:
+  sets.append(json.loads(rebrick.lego.get_set(i).read()))
   print(f"Added: {sets[-1]['name']} ({sets[-1]['set_num'][:-2]})")
-  set = input("Set: ")
+  i = input("Set: ")
 
-print(f"\nUsing {len(sets)} set(s) with {sum([i['num_parts'] for i in sets])} parts")
+print(f"\nUsing {len(sets)} set(s) to build {set['name']} ({set['set_num'][:-2]})")
 print("\nCalculating...")
 
-mparts = {}
-for i in json.loads(rebrick.lego.get_set_elements(int(bld["set_num"][:-2]), color_details=False, page_size=10000).read())["results"]:
+set["parts"] = {}
+for i in json.loads(rebrick.lego.get_set_elements(set["set_num"], color_details=False, page_size=10000).read())["results"]:
   if not i["is_spare"]:
-    if i["part"]["part_num"] in mparts:
-      mparts[i["part"]["part_num"]] += i["quantity"]
+    if i["part"]["part_num"] in set["parts"]:
+      set["parts"][i["part"]["part_num"]] += i["quantity"]
     else:
-      mparts[i["part"]["part_num"]] = i["quantity"]
+      set["parts"][i["part"]["part_num"]] = i["quantity"]
 
-sparts = []
-for i in sets:
-  temp = {}
-  for i in json.loads(rebrick.lego.get_set_elements(int(i["set_num"][:-2]), color_details=False, page_size=10000).read())["results"]:
-    if not i["is_spare"]:
-      if i["part"]["part_num"] in temp:
-        temp[i["part"]["part_num"]] += i["quantity"]
+for i in range(len(sets)):
+  sets[i]["parts"] = {}
+  for j in json.loads(rebrick.lego.get_set_elements(sets[i]["set_num"], color_details=False, page_size=10000).read())["results"]:
+    if not j["is_spare"]:
+      if j["part"]["part_num"] in sets[i]["parts"]:
+        sets[i]["parts"][j["part"]["part_num"]] += j["quantity"]
       else:
-        temp[i["part"]["part_num"]] = i["quantity"]
-  sparts.append(temp)
+        sets[i]["parts"][j["part"]["part_num"]] = j["quantity"]
 
-fparts = [{} for i in range(len(sets) + 1)]
-for i in mparts:
-  for j in range(0, len(sets)):
-    if i in sparts[j]:
-      if sparts[j][i] >= mparts[i]:
-        fparts[j + 1][i] = sparts[j][i]
-        mparts[i] = 0
+parts = [{} for i in range(len(sets) + 1)]
+for i in set["parts"]:
+  for j in range(len(sets)):
+    if i in sets[j]["parts"]:
+      if sets[j]["parts"][i] >= set["parts"][i]:
+        parts[j + 1][i] = sets[j]["parts"][i]
+        set["parts"][i] = 0
         break
       else:
-        fparts[j + 1][i] = sparts[j][i]
-        mparts[i] -= sparts[j][i]
-    if mparts[i] > 0:
-      fparts[0][i] = mparts[i]
+        parts[j + 1][i] = sets[j]["parts"][i]
+        set["parts"][i] -= sets[j]["parts"][i]
+    if set["parts"][i] > 0:
+      parts[0][i] = set["parts"][i]
 
-print("\nMissing parts:")
-[print(f"{i}: {fparts[0][i]}") for i in fparts[0]]
+print(f"\nMissing parts ({sum([parts[0][i] for i in parts[0]])} total):")
+[print(f"{i}: {parts[0][i]}") for i in parts[0]]
 for i in range(0, len(sets)):
-  print(f"\nParts in {sets[i]['name']} ({sets[i]['set_num'][:-2]})")
-  [print(f"{j}: {fparts[i][j]}") for j in fparts[i]]
+  print(f"\nParts in {sets[i]['name']} ({sets[i]['set_num'][:-2]}) ({sum([parts[i][j] for j in parts[i]])} total):")
+  [print(f"{j}: {parts[i][j]}") for j in parts[i]]
