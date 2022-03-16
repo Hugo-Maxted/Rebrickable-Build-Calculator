@@ -1,3 +1,4 @@
+import webbrowser
 import rebrick
 import json
 
@@ -39,17 +40,51 @@ for i in set["parts"]:
   for j in range(len(sets)):
     if i in sets[j]["parts"]:
       if sets[j]["parts"][i] >= set["parts"][i]:
-        parts[j + 1][i] = sets[j]["parts"][i]
+        parts[j + 1][i] = set["parts"][i]
         set["parts"][i] = 0
         break
       else:
         parts[j + 1][i] = sets[j]["parts"][i]
         set["parts"][i] -= sets[j]["parts"][i]
-    if set["parts"][i] > 0:
+    if set["parts"][i] > 0 and j == len(sets) - 1:
       parts[0][i] = set["parts"][i]
 
-print(f"\nMissing parts ({sum([parts[0][i] for i in parts[0]])} total):")
-[print(f"{i}: {parts[0][i]}") for i in parts[0]]
-for i in range(0, len(sets)):
-  print(f"\nParts in {sets[i]['name']} ({sets[i]['set_num'][:-2]}) ({sum([parts[i][j] for j in parts[i]])} total):")
-  [print(f"{j}: {parts[i][j]}") for j in parts[i]]
+report = open("results.html", "w")
+report.write(f"""
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results</title>
+  </head>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap");
+    body {'''{
+      font-family: "Roboto", sans-serif;
+    }'''}
+    .element {'''{
+      display: inline-block;
+      width: 10%;
+      text-align: center;
+    }'''}
+    img {'''{
+      width: 100%;
+    }'''}
+  </style>
+  <body>
+    <h3>Missing pieces:</h3>
+    {"".join([f"<div class='element'><img src='https://www.lego.com/cdn/product-assets/element.img.lod5photo.192x192/{i}.jpg' alt='{i}' /><br /><b>{parts[0][i]}x</b> {i}</div>" for i in sorted(parts[0], key=parts[0].get, reverse=True)])}
+    <br />
+    <br />
+    {"".join([f'''<h3>Pieces from {sets[i]['name']} ({sets[i]['set_num'][:-2]}):</h3>
+    {"".join([f"<div class='element'><img src='https://www.lego.com/cdn/product-assets/element.img.lod5photo.192x192/{j}.jpg' alt='{j}' /><br /><b>{parts[i + 1][j]}x</b> {j}</div>" for j in sorted(parts[i + 1], key=parts[i + 1].get, reverse=True)])}
+    <br />
+    <br />''' for i in range(len(sets))])}
+  </body>
+</html>
+""")
+report.close()
+
+webbrowser.open("results.html")
