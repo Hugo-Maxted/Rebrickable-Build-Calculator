@@ -18,6 +18,7 @@ while i:
 print(f"\nUsing {len(sets)} set(s) to build {set['name']} ({set['set_num'][:-2]})")
 print("\nCalculating...")
 
+images = {}
 set["parts"] = {}
 for i in json.loads(rebrick.lego.get_set_elements(set["set_num"], color_details=False, page_size=10000).read())["results"]:
   if not i["is_spare"]:
@@ -25,6 +26,7 @@ for i in json.loads(rebrick.lego.get_set_elements(set["set_num"], color_details=
       set["parts"][i["part"]["part_num"]] += i["quantity"]
     else:
       set["parts"][i["part"]["part_num"]] = i["quantity"]
+    images[i["part"]["part_num"]] = i["part"]["part_img_url"]
 
 for i in range(len(sets)):
   sets[i]["parts"] = {}
@@ -75,11 +77,11 @@ report.write(f"""
   </style>
   <body>
     <h3>Missing pieces:</h3>
-    {"".join([f"<div class='element'><img src='https://www.lego.com/cdn/product-assets/element.img.lod5photo.192x192/{i}.jpg' alt='{i}' /><br /><b>{parts[0][i]}x</b> {i}</div>" for i in sorted(parts[0], key=parts[0].get, reverse=True)])}
+    {"".join([f"<div class='element'><img src='{images[i]}' alt='{i}' /><br /><b>{parts[0][i]}x</b> {i}</div>" for i in sorted(parts[0], key=parts[0].get, reverse=True)])}
     <br />
     <br />
     {"".join([f'''<h3>Pieces from {sets[i]['name']} ({sets[i]['set_num'][:-2]}):</h3>
-    {"".join([f"<div class='element'><img src='https://www.lego.com/cdn/product-assets/element.img.lod5photo.192x192/{j}.jpg' alt='{j}' /><br /><b>{parts[i + 1][j]}x</b> {j}</div>" for j in sorted(parts[i + 1], key=parts[i + 1].get, reverse=True)])}
+    {"".join([f"<div class='element'><img src='{images[j]}' alt='{j}' /><br /><b>{parts[i + 1][j]}x</b> {j}</div>" for j in sorted(parts[i + 1], key=parts[i + 1].get, reverse=True)])}
     <br />
     <br />''' for i in range(len(sets))])}
   </body>
@@ -87,4 +89,6 @@ report.write(f"""
 """)
 report.close()
 
+print("\nComplete!")
+print("Opening results in your browser...")
 webbrowser.open("results.html")
