@@ -20,13 +20,15 @@ print("\nCalculating...")
 
 images = {}
 set["parts"] = {}
+variants = {}
 for i in json.loads(rebrick.lego.get_set_elements(set["set_num"], color_details=False, page_size=10000).read())["results"]:
   if not i["is_spare"]:
     if i["part"]["part_num"] in set["parts"]:
       set["parts"][i["part"]["part_num"]] += i["quantity"]
     else:
       set["parts"][i["part"]["part_num"]] = i["quantity"]
-    images[i["part"]["part_num"]] = i["part"]["part_img_url"]
+      images[i["part"]["part_num"]] = i["part"]["part_img_url"]
+      variants[i["part"]["part_num"]] = i["part"]["alternates"] + i["part"]["molds"]
 
 for i in range(len(sets)):
   sets[i]["parts"] = {}
@@ -38,16 +40,24 @@ for i in range(len(sets)):
         sets[i]["parts"][j["part"]["part_num"]] = j["quantity"]
 
 parts = [{} for i in range(len(sets) + 1)]
-for i in set["parts"]:
+for i in list(set["parts"]):
   for j in range(len(sets)):
+    piece = None
     if i in sets[j]["parts"]:
-      if sets[j]["parts"][i] >= set["parts"][i]:
+      piece = i
+    else:
+      for k in variants[i]:
+        if k in sets[j]["parts"]:
+          piece = k
+          break
+    if piece in sets[j]["parts"]:
+      if sets[j]["parts"][piece] >= set["parts"][i]:
         parts[j + 1][i] = set["parts"][i]
-        set["parts"][i] = 0
+        set["parts"][piece] = 0
         break
       else:
-        parts[j + 1][i] = sets[j]["parts"][i]
-        set["parts"][i] -= sets[j]["parts"][i]
+        parts[j + 1][i] = sets[j]["parts"][piece]
+        set["parts"][i] -= sets[j]["parts"][piece]
     if set["parts"][i] > 0 and j == len(sets) - 1:
       parts[0][i] = set["parts"][i]
 
